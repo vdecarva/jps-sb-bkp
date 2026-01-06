@@ -15,12 +15,6 @@ globals:
 targetNodes:
   nodeGroup: '*'
 
-onInstall:
-  if ('${settings.choice}' == 'full'):
-    - snapshot
-  if ('${settings.choice}' == 'folder'):
-    - backup
-
 settings:
   main:
     fields: []
@@ -53,54 +47,29 @@ settings:
 
 actions:
 
-  snapshot:
+  fullBackup:
     install:
       jps: manifests/snapshot.jps
     setGlobals:
-      SUCCESS: snapshot
-    settings:
-      User: "${settings.User}"
-      key: "${settings.key}"
-      node: "${targetNodes.nodeGroup}"
-      sauvegarde: "${settings.sauvegarde}"
-      year: "${settings.year}"
-      month: "${settings.month}"
-      day: "${settings.day}"
+      SUCCESS: snapshots
 
-  backup:
+  folderBackup:
     install:
       jps: manifests/folders.jps
     setGlobals:
       SUCCESS: backup
-    settings:
-      User: "${settings.User}"
-      key: "${settings.key}"
-      node: "${targetNodes.nodeGroup}"
-      path: "${settings.path}"
-      sauvegarde: "${settings.sauvegarde}"
-      year: "${settings.year}"
-      month: "${settings.month}"
-      day: "${settings.day}"
 
   restore:
     install:
       jps: manifests/recovery.jps
     setGlobals:
       SUCCESS: restore
-    settings:
-      snapshot: "${settings.snapshot}"
-      User: "${settings.User}"
-      key: "${settings.key}"
-      destination: "${settings.destination}"
-      node: "${settings.nodeGroup}"
 
   desinstall:
     install:
       jps: manifests/uninstall.jps
     setGlobals:
       SUCCESS: remove
-    settings:
-      node: "${targetNodes.nodeGroup}"
 
 user: root
 
@@ -110,10 +79,15 @@ buttons:
     submitButtonText: Remove backup routine 
     loadingText: Removing backup routine...
 
-  - action: configure
-    caption: Configure backup schedule
-    submitButtonText: Configure backup routine 
-    loadingText: Configure backup routine...
+  - action: fullBackup
+    caption: Schedule full backup
+    submitButtonText: Configure backup routine
+    confirmText: Are you sure?
+
+  - action: folderBackup
+    caption: Schedule folder backup
+    submitButtonText: Configure backup routine
+    confirmText: Are you sure?
 
   - action: restore
     caption: Restore a backup
