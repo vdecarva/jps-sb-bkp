@@ -29,35 +29,6 @@ settings:
   swiss-backup-restore:
      fields: []
      onBeforeInit: scripts/settings_restore.js
-     prepopulate: scripts/prepopulate_restore.js
-     fields:
-       - name: User
-         caption: Swiss Backup username
-         type: string
-         required: true
-       - name: key
-         caption: Password
-         type: string
-         input
-          Type: password
-       - name: nodes
-         caption: Display backups for
-         type: list
-         required: true
-         values: {}           # sera rempli par le script
-       - name: snapshot
-         caption: Select backup
-         type: list
-         required: true
-         dependsOn:
-           nodes: {}          # sera rempli par le script
-       - name: destination
-         caption: Restore location
-         type: string
-         required: true
-       - name: custom
-         caption: Restore to this username (optional)
-         type: string
 
 actions:
 
@@ -96,12 +67,12 @@ actions:
     setGlobals:
       SUCCESS: restore
     settings:
-      User: "${settings.swiss-backup-restore.User}"
-      key: "${settings.swiss-backup-restore.key}"
-      snapshot: "${settings.swiss-backup-restore.snapshot}"
-      destination: "${settings.swiss-backup-restore.destination}"
-      custom: "${settings.swiss-backup-restore.custom}"
-      node: "${settings.swiss-backup-restore.nodeGroup}"
+      User: "${settings.User}"
+      key: "${settings.key}"
+      snapshot: "${settings.snapshot}"
+      destination: "${settings.destination}"
+      custom: "${settings.custom}"
+      node: "${settings.nodeGroup}"
 
 user: root
 
