@@ -22,6 +22,11 @@ onInstall:
   if ('${settings.choice}' == 'folder'):
     - backup
 
+settings:
+  restore: 
+    fields: []
+    onBeforeInit: scripts/settings_restore.js
+
 actions:
 
   snapshot:
@@ -54,18 +59,11 @@ actions:
       day: "${settings.day}"
 
   restore:
-    fields: []
-    onBeforeInit: scripts/settings_restore.js
     install:
       jps: manifests/recovery.jps
     setGlobals:
       SUCCESS: restore
-    settings:
-      id: "${settings.snapshot}"
-      User: "${settings.User}"
-      key: "${settings.key}"
-      destination: "${settings.destination}"
-      node: "${targetNodes.nodeGroup}"
+    settings: restore
 
   desinstall:
     install:
@@ -87,6 +85,7 @@ buttons:
     caption: Restore a backup
     submitButtonText: Restore from a backup
     loadingText: Restoring from selected backup...
+    successText: The backup have been successfully restored.
 
 success:
   text:  success/${globals.SUCCESS}.md
