@@ -9,15 +9,23 @@ description:
   short: Easily back up and restore your container's filesystems in the container of your choice.
 logo: SwissBackup.svg
 
+onBeforeInit: scripts/settings_backup.js
+
 globals:
   pass: ${fn.md5([user.uid])}
 
 targetNodes:
   nodeGroup: '*'
 
+onInstall:
+  if ('${settings.choice}' == 'full'):
+    - snapshot
+  if ('${settings.choice}' == 'folder'):
+    - backup
+
 settings:
   main:
-    fields: []
+    {}
 
   restoreForm:
     fields:
@@ -47,29 +55,47 @@ settings:
 
 actions:
 
-  fullBackup:
+  snapshot:
     install:
       jps: manifests/snapshot.jps
     setGlobals:
       SUCCESS: snapshots
+    settings:
+      User: "${settings.User}"
+      key: "${settings.key}"
+      node: "${targetNodes.nodeGroup}"
+      sauvegarde: "${settings.sauvegarde}"
+      year: "${settings.year}"
+      month: "${settings.month}"
+      day: "${settings.day}"
 
-  folderBackup:
+  backup:
     install:
       jps: manifests/folders.jps
     setGlobals:
       SUCCESS: backup
+    settings:
+      User: "${settings.User}"
+      key: "${settings.key}"
+      node: "${targetNodes.nodeGroup}"
+      path: "${settings.path}"
+      sauvegarde: "${settings.sauvegarde}"
+      year: "${settings.year}"
+      month: "${settings.month}"
+      day: "${settings.day}"
 
   restore:
     install:
-      jps: manifests/recovery.jps
+      jps: manifests/recovery.jps 
     setGlobals:
       SUCCESS: restore
-
-  desinstall:
-    install:
-      jps: manifests/uninstall.jps
-    setGlobals:
-      SUCCESS: remove
+    settings:
+      User: "${settings.User}"
+      key: "${settings.key}"
+      snapshot: "${settings.snapshot}"
+      destination: "${settings.destination}"
+      custom: "${settings.custom}"
+      node: "${settings.nodeGroup}"
 
 user: root
 
