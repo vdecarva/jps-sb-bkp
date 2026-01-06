@@ -1,36 +1,41 @@
 import org.yaml.snakeyaml.Yaml;
 
-// Only list nodes in the current environment that have the backup add‑on installed.  This
-// script is invoked before scheduling a backup and does not handle restoration.
-var envs = api.env.control.GetEnvs();
-jelastic.marketplace.console.WriteLog(envs);
-if (envs.result !== 0) return envs;
-var resp = jelastic.environment.control.GetEnvInfo(appid, session);
-if (resp.result != 0) return resp;
+/*
+ * This script is invoked before the SwissBackup add‑on is installed.  It enumerates all running
+ * environments and their nodes without filtering on existing add‑ons, so the user can choose
+ * where to schedule backups.  It then builds a configuration form that asks for SwissBackup
+ * credentials, the environment and node to back up, backup mode (full or specific folders),
+ * retention period, and backup frequency.
+ */
 
-// Swiss Backup add‑on template ID used to identify nodes that have the add‑on installed.
-var backupTemplate = "c3c375b4-83c6-434c-b8af-8ea6651e246d";
+// Retrieve all environments accessible to the user
+var resp = api.env.control.GetEnvs();
+if (resp.result !== 0) return resp;
 
-// Build a map of node names for the form.  Keys and values are identical for display
-// purposes.  Only nodes with the backup add‑on are included.
-var nodesHostname = {};
-resp.nodes.forEach(function (node) {
-    node.addons.forEach(function (add) {
-        if (add.appTemplateId == backupTemplate) {
-            var conteneur = node.adminUrl.replace("https://", "").replace(/\..*/, "").replace("docker", "node").replace("vds", "node");
-            var nodeName = conteneur.substring(conteneur.indexOf('-') + 1);
-            nodesHostname[nodeName] = nodeName;
-        }
-    });
+var envOptions = {};
+var nodeOptions = {};
+
+// Iterate through each environment and collect node groups
+resp.infos.forEach(function (envInfo) {
+    var env = envInfo.env;
+    // Only list running environments
+    if (env.status == 1) {
+        var envName = env.envName;
+        var displayName = env.displayName ? env.displayName + " (" + envName + ")" : envName;
+        envOptions[envName] = displayName;
+        nodeOptions[envName] = {};
+        envInfo.nodes.forEach(function (node) {
+            var group = node.nodeGroup;
+            var caption = (node.displayName || node.name) + ' (' + group + ')';
+            nodeOptions[envName][group] = caption;
+        });
+    }
 });
 
-// Return a form dedicated to backup configuration.  Users choose their SwissBackup
-// credentials, select which node to back up, decide whether to back up everything or
-// specific folders, configure retention, and set the backup frequency.
 return {
     result: 0,
     settings: {
-        formId: "swiss-backup-schedule",
+        formId: "swiss-backup-install",
         formCfg: {
             fields: [
                 {
@@ -63,17 +68,27 @@ return {
                         {
                             type: "displayfield",
                             cls: "x-item-disabled",
-                            value: "<h3>Backup configuration</h3>",
+                            value: "<h3>Backup installation</h3>",
                         }
                     ]
                 },
                 {
-                    name: "node",
-                    caption: "Node",
+                    name: "envName",
+                    caption: "Environment",
                     type: "list",
-                    values: nodesHostname,
+                    values: envOptions,
                     required: true,
                     editable: false
+                },
+                {
+                    name: "nodeGroup",
+                    caption: "Node group",
+                    type: "list",
+                    required: true,
+                    editable: false,
+                    dependsOn: {
+                        envName: nodeOptions
+                    }
                 },
                 {
                     name: "choice",
