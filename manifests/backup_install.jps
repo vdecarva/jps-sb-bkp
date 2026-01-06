@@ -1,0 +1,59 @@
+jversion: 0.9
+type: update
+name: SwissBackup backup installation
+baseUrl: https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/master/
+
+# Use a dedicated settings script to prompt the user for Swiss Backup credentials,
+# node selection, backup mode (full vs folder), retention and frequency.
+onBeforeInit: scripts/settings_backup.js
+
+globals:
+  # derive a secret for the restic repository from the user id
+  pass: ${fn.md5([user.uid])}
+
+# Apply the backup on any node group (node/docker/vds)
+targetNodes:
+  nodeGroup: '*'
+
+# Determine which backup action to run based on the user’s choice.  A full backup
+# uses the snapshot manifest, while a folder backup uses the folders manifest.
+onInstall:
+  if ('${settings.choice}' == 'full'):
+    - snapshot
+  if ('${settings.choice}' == 'folder'):
+    - backup
+
+# Define the actions for snapshot and folder backups.  These will call the
+# existing manifests from addon‑backup, passing the Swiss Backup credentials
+# and backup configuration gathered in the settings script.
+actions:
+  snapshot:
+    install:
+      jps: manifest/snapshot.jps
+    setGlobals:
+      SUCCESS: snapshots
+    settings:
+      User: "${settings.User}"
+      key: "${settings.key}"
+      node: "${targetNodes.nodeGroup}"
+      sauvegarde: "${settings.sauvegarde}"
+      year: "${settings.year}"
+      month: "${settings.month}"
+      day: "${settings.day}"
+  backup:
+    install:
+      jps: manifest/folders.jps
+    setGlobals:
+      SUCCESS: backup
+    settings:
+      User: "${settings.User}"
+      key: "${settings.key}"
+      node: "${targetNodes.nodeGroup}"
+      path: "${settings.path}"
+      sauvegarde: "${settings.sauvegarde}"
+      year: "${settings.year}"
+      month: "${settings.month}"
+      day: "${settings.day}"
+
+# Run the installation commands as root
+user: root
