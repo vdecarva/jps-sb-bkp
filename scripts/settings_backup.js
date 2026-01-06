@@ -5,7 +5,7 @@ import org.yaml.snakeyaml.Yaml;
 var envs = api.env.control.GetEnvs();
 console.log("envs output:", envs);
 if (envs.result !== 0) return envs;
-var resp = jelastic.environment.control.GetEnvInfo(envName, session);
+var resp = jelastic.environment.control.GetEnvInfo(appid, session);
 if (resp.result != 0) return resp;
 
 // Swiss Backup add‑on template ID used to identify nodes that have the add‑on installed.
