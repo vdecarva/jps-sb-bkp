@@ -63,7 +63,12 @@ actions:
       jps: manifests/recovery.jps
     setGlobals:
       SUCCESS: restore
-    settings: restore
+    settings:
+      snapshot: "${settings.snapshot}"
+      User: "${settings.User}"
+      key: "${settings.key}"
+      destination: "${settings.destination}"
+      node: "${settings.nodeGroup}"
 
   desinstall:
     install:
