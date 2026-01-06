@@ -9,7 +9,6 @@ globals:
 targetNodes:
 
   nodeGroup: '*'
-onBeforeInit: scripts/settings_restore.js
 
 onInstall:
 
