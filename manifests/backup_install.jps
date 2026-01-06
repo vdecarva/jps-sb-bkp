@@ -66,7 +66,12 @@ buttons:
     caption: Remove schedule
     submitButtonText: Remove backup routine 
     loadingText: Removing backup routine...
-    
+
+    action: restore
+    caption: Restore a backup
+    submitButtonText: Restore from a backup
+    loadingText: Restoring from selected backup...
+
 success:
   text:  success/${globals.SUCCESS}.md
   mail:  success/${globals.SUCCESS}.md
