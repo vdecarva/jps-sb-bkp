@@ -9,8 +9,6 @@ description:
   short: Easily back up and restore your container's filesystems in the container of your choice.
 logo: SwissBackup.svg
 
-onBeforeInit: scripts/settings_backup.js
-
 globals:
   pass: ${fn.md5([user.uid])}
 
@@ -25,33 +23,10 @@ onInstall:
 
 settings:
   main:
-    {}
+     onBeforeInit: scripts/settings_backup.js
 
   restoreForm:
-    fields:
-      - name: User
-        caption: Swiss Backup username
-        type: string
-        required: true
-        default: "SBI-"
-      - name: key
-        caption: Password
-        type: string
-        inputType: password
-        required: false
-      - name: snapshot
-        caption: Backup ID to restore
-        type: string
-        required: true
-      - name: destination
-        caption: Restore location
-        type: string
-        default: "/tmp/restore/"
-        required: true
-      - name: custom
-        caption: Restore to this username (optional)
-        type: string
-        required: false
+     onBeforeInit: scripts/settings_restore.js
 
 actions:
 
@@ -104,10 +79,17 @@ buttons:
     caption: Remove schedule
     submitButtonText: Remove backup routine 
     loadingText: Removing backup routine...
+  
+  - action: configure
+    caption: Configure schedule
+    settings: main
+    submitButtonText: Configure backup routine 
+    loadingText: Configuring backup routine...
 
   - action: restore
     caption: Restore a backup
     submitButtonText: Restore from a backup
+    settings: restoreForm
     loadingText: Restoring from selected backup...
 
 success:
