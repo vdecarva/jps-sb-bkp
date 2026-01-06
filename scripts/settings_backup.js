@@ -1,399 +1,193 @@
-import org.yaml.snakeyaml.Yaml;
+var resp = api.env.control.GetEnvs();
+if (resp.result !== 0) return resp;
 
-/*
- * Modified settings script based on the original addon‑backup settings.js.  The goal is to
- * remain as close as possible to the original logic while removing the filter on the
- * backup add‑on template.  All running environments and their nodes are considered, and
- * plan.json is read wherever it exists to build the list of available backups.
- */
+// Dictionnaires pour les environnements et les nœuds
+var envOptions = {};
+var nodes = {};
 
-// Fetch all environments accessible for this user
-var resp = jelastic.environment.control.GetEnvs(appid, session);
-if (resp.result != 0) return resp;
-
-var listBackups = {};
-var ids = [];
-var nodesHostname = {};
-
-// Iterate through all environments and collect node identifiers (no filter on add‑on)
-for (var i = 0; (envInfo = resp.infos[i]); i++) {
-    if (envInfo.env.status == "1") {
-        jelastic.marketplace.console.WriteLog("env is started" + envInfo.env.domain);
-        for (var j = 0; (node = envInfo.nodes[j]); j++) {
-            // Derive container name and ID from adminUrl
-            var admin = node.adminUrl.replace("https://", "").replace("http://", "");
-            admin = admin.replace(/\..*/, "").replace("docker", "node").replace("vds", "node");
-            var name = admin.substring(admin.indexOf('-') + 1, admin.length);
-            var id = admin.substring(4, admin.indexOf('-'));
-            ids.push({ name: name, id: id });
-        }
-    }
-}
-
-// Parameters for reading plan.json on nodes
-var params = {
-    session: session,
-    path: "/home/plan.json",
-    nodeType: "",
-    nodeGroup: ""
-};
-
-var local_date = 0;
-
-// Attempt to read plan.json on every node collected above
-ids.forEach(function (element) {
-    var FileReadResponse = jelastic.environment.file.Read(
-        element.name,
-        params.session,
-        params.path,
-        params.nodeType,
-        params.nodeGroup,
-        element.id
-    );
-    if (FileReadResponse.result != 0) {
-        // If plan.json is not found on this node, do not include it in the restore list
-        delete nodesHostname['node'.concat('', element.id + '-').concat('', element.name)];
-    } else {
-        var file = FileReadResponse.body;
-        var plan = toNative(new Yaml().load(file));
-        if (plan.last_update > local_date) {
-            local_date = plan.last_update;
-            plan.backup_plan.forEach(function (objectBackup) {
-                if (!listBackups[objectBackup["name"]]) {
-                    listBackups[objectBackup["name"]] = {};
-                }
-                var toDisplay = objectBackup["date"].replace('T', ' ') + " " + objectBackup["path"] + " " + objectBackup["size"];
-                listBackups[objectBackup["name"]][objectBackup["id"]] = toDisplay;
-                // Use objectBackup.name as key for nodes with backups
-                nodesHostname[objectBackup.name] = objectBackup.name;
-            });
-        }
+// Remplir envOptions et nodes pour chaque environnement actif
+resp.infos.forEach(function (envInfo) {
+    var env = envInfo.env;
+    if (env.status == 1) {
+        var envName = env.envName;
+        var caption = (env.displayName ? env.displayName : envName) + " (" + envName + ")";
+        envOptions[envName] = caption;
+        nodes[envName] = {};
+        envInfo.nodes.forEach(function (node) {
+            var group = node.nodeGroup;
+            // Utiliser nodeGroup pour identifier les conteneurs (cp, sqldb, storage, etc.)
+            nodes[envName][group] = (node.displayName || node.name) + " (" + group + ")";
+        });
     }
 });
 
-// Build the form configuration similar to the original settings.js
+// Retourner le formulaire d’installation (backup) sans champ de restauration
 return {
     result: 0,
-    settings: {
-        formId: "swiss-backup-create",
-        formCfg: {
-            fields: [
+    "settings": {
+        "formId": "swiss-backup-create",
+        "formCfg": {
+            "fields": [
                 {
-                    name: "User",
-                    caption: "Swiss Backup username",
-                    type: "string",
-                    required: true,
-                    default: "SBI-"
+                    "name": "User",
+                    "caption": "Swiss Backup username",
+                    "type": "string",
+                    "required": true,
+                    "default": "SBI-"
                 },
                 {
-                    name: "key",
-                    caption: "Password",
-                    type: "string",
-                    required: false,
-                    inputType: "password"
+                    "name": "key",
+                    "caption": "Password",
+                    "type": "string",
+                    "required": false,
+                    "inputType": "password"
                 },
                 {
-                    caption: "__________________________________________________________________________________",
-                    cls: "x-item-disabled",
-                    type: "displayfield",
-                    name: "exemple",
-                    hidden: false
+                    "caption": "__________________________________________________________________________________",
+                    "cls": "x-item-disabled",
+                    "type": "displayfield",
+                    "name": "separator",
+                    "hidden": false
                 },
                 {
-                    type: "compositefield",
-                    hideLabel: true,
-                    pack: "center",
-                    name: "wp_protect",
-                    items: [
+                    "type": "compositefield",
+                    "hideLabel": true,
+                    "pack": "center",
+                    "name": "header",
+                    "items": [
                         {
-                            type: "displayfield",
-                            cls: "x-item-disabled",
-                            value: "<h3>What action do you want to perform?</h3>"
+                            "type": "displayfield",
+                            "cls": "x-item-disabled",
+                            "value": "<h3>Backup configuration</h3>"
                         }
                     ]
                 },
                 {
-                    name: "mode",
-                    type: "radio-fieldset",
-                    values: {
-                        restauration: "Restore your data",
-                        backup: "Backup your data"
+                    "name": "envName",
+                    "caption": "Environment",
+                    "type": "list",
+                    "values": envOptions,
+                    "required": true,
+                    "editable": false
+                },
+                {
+                    "name": "nodeGroup",
+                    "caption": "Node group",
+                    "type": "list",
+                    "required": true,
+                    "editable": false,
+                    "dependsOn": {
+                        "envName": nodes
+                    }
+                },
+                {
+                    "name": "choice",
+                    "type": "radio-fieldset",
+                    "values": {
+                        "full": "Back up all files",
+                        "folder": "Back up specific folders"
                     },
-                    default: "backup",
-                    showIf: {
-                        restauration: [
+                    "default": "full",
+                    "showIf": {
+                        "full": [
                             {
-                                caption: "__________________________________________________________________________________",
-                                cls: "x-item-disabled",
-                                type: "displayfield",
-                                name: "exemple",
-                                hidden: false
+                                "type": "displayfield",
+                                "cls": "x-item-disabled",
+                                "markup": "Some system files will be excluded. See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> for more detail."
                             },
                             {
-                                type: "compositefield",
-                                hideLabel: true,
-                                pack: "center",
-                                name: "wp_protect",
-                                items: [
-                                    {
-                                        type: "displayfield",
-                                        cls: "x-item-disabled",
-                                        value: "<h3>Select the backup you want to restore</h3>"
-                                    }
-                                ]
-                            },
-                            {
-                                type: "list",
-                                caption: "Display backups for",
-                                tooltip: "See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> section restoration",
-                                name: "nodes",
-                                hidden: false,
-                                values: nodesHostname,
-                                columns: 2
-                            },
-                            {
-                                caption: "Select backup",
-                                tooltip: "UTC time",
-                                type: "list",
-                                name: "snapshot",
-                                required: true,
-                                dependsOn: {
-                                    nodes: listBackups
-                                }
-                            },
-                            {
-                                caption: "__________________________________________________________________________________",
-                                cls: "x-item-disabled",
-                                type: "displayfield",
-                                name: "snapshot",
-                                hidden: true
-                            },
-                            {
-                                type: "compositefield",
-                                hideLabel: true,
-                                pack: "center",
-                                name: "wp_protect",
-                                items: [
-                                    {
-                                        type: "displayfield",
-                                        cls: "x-item-disabled",
-                                        value: "<h3>Restore configuration</h3>"
-                                    }
-                                ]
-                            },
-                            {
-                                type: "radio-fieldset",
-                                name: "permissions",
-                                hidden: false,
-                                required: true,
-                                default: "classic",
-                                values: {
-                                    classic: "Keep original files permissions",
-                                    permissions: "Change files ownership"
-                                },
-                                showIf: {
-                                    classic: [
-                                        {
-                                            name: "destination",
-                                            caption: "Restore location",
-                                            regex: "[^s/ *]",
-                                            regexText: "please indicate other folder than / ",
-                                            type: "string",
-                                            required: true,
-                                            placeholder: "/tmp/restore/"
-                                        },
-                                        {
-                                            type: "displayfield",
-                                            cls: "warning",
-                                            height: 20,
-                                            hideLabel: true,
-                                            markup: "Existing files will be overwritten"
-                                        }
-                                    ],
-                                    permissions: [
-                                        {
-                                            name: "custom",
-                                            caption: "Restore to this username",
-                                            type: "string",
-                                            required: true,
-                                            placeholder: "example: nginx"
-                                        },
-                                        {
-                                            name: "destination",
-                                            caption: "Restore location",
-                                            regex: "[^s/ *]",
-                                            regexText: "please indicate other folder than / ",
-                                            type: "string",
-                                            required: true,
-                                            placeholder: "/tmp/restore/"
-                                        },
-                                        {
-                                            type: "displayfield",
-                                            cls: "warning",
-                                            height: 20,
-                                            hideLabel: true,
-                                            markup: "Existing files will be overwritten"
-                                        }
-                                    ]
-                                }
+                                "type": "displayfield",
+                                "cls": "warning",
+                                "height": 20,
+                                "hideLabel": true,
+                                "markup": "DB server requires to be automatically backed up into a file with another tool before installation."
                             }
                         ],
-                        backup: [
+                        "folder": [
                             {
-                                caption: "__________________________________________________________________________________",
-                                cls: "x-item-disabled",
-                                type: "displayfield",
-                                name: "exemple",
-                                hidden: false
+                                "name": "path",
+                                "caption": "Folders to back up",
+                                "regex": "[^\\s/ *]",
+                                "regexText": "Use Snapshot of the whole container button for backup / ",
+                                "type": "string",
+                                "placeholder": "path/to/folder1/, path/to/folder2/"
                             },
                             {
-                                type: "compositefield",
-                                hideLabel: true,
-                                pack: "center",
-                                name: "wp_protect",
-                                items: [
-                                    {
-                                        type: "displayfield",
-                                        cls: "x-item-disabled",
-                                        value: "<h3>Backup configuration</h3>"
-                                    }
-                                ]
-                            },
-                            {
-                                name: "choice",
-                                type: "radio-fieldset",
-                                values: [
-                                    {
-                                        value: "full",
-                                        caption: "Back up all files"
-                                    },
-                                    {
-                                        value: "folder",
-                                        caption: "Back up specific folders"
-                                    }
-                                ],
-                                default: "full",
-                                showIf: {
-                                    full: [
-                                        {
-                                            type: "displayfield",
-                                            cls: "x-item-disabled",
-                                            markup: "Some system files will be excluded. See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> for more detail.",
-                                            name: "info",
-                                            hidden: false
-                                        },
-                                        {
-                                            type: "displayfield",
-                                            cls: "warning",
-                                            height: 20,
-                                            hideLabel: true,
-                                            markup: " DB server requires to be automatically backed up into a file with another tool before installation."
-                                        }
-                                    ],
-                                    folder: [
-                                        {
-                                            name: "path",
-                                            caption: "Folders to back up",
-                                            regex: "[^s/ *]",
-                                            regexText: "Use Snapshot of the whole container button for backup / ",
-                                            type: "string",
-                                            placeholder: "path/to/folder1/, path/to/folder2/, path/to/folderX"
-                                        },
-                                        {
-                                            type: "displayfield",
-                                            cls: "warning",
-                                            height: 20,
-                                            hideLabel: true,
-                                            markup: " DB server requires to be automatically backed up into a file with another tool before installation."
-                                        }
-                                    ]
-                                }
-                            },
-                            {
-                                pack: "",
-                                align: "",
-                                defaultMargins: {
-                                    top: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    left: 20
-                                },
-                                defaultPadding: 0,
-                                defaultFlex: 0,
-                                caption: "Retention period",
-                                tooltip: "See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> section backup retention",
-                                hideLabel: false,
-                                type: "compositefield",
-                                name: "compositefield",
-                                hidden: false,
-                                items: [
-                                    {
-                                        type: "displayfield",
-                                        height: 5,
-                                        hideLabel: true,
-                                        markup: "Years"
-                                    },
-                                    {
-                                        width: 37,
-                                        name: "year",
-                                        regex: "^[0-1]",
-                                        regexText: "0-1",
-                                        type: "string",
-                                        default: "0",
-                                        required: "true",
-                                        hidden: false
-                                    },
-                                    {
-                                        type: "displayfield",
-                                        height: 5,
-                                        hideLabel: true,
-                                        markup: "Months"
-                                    },
-                                    {
-                                        width: 37,
-                                        name: "month",
-                                        regex: "^(1[0-2]|[0-9])$",
-                                        regexText: "0-12",
-                                        type: "string",
-                                        default: "0",
-                                        required: "true",
-                                        hidden: false
-                                    },
-                                    {
-                                        type: "displayfield",
-                                        height: 5,
-                                        hideLabel: true,
-                                        markup: "Days"
-                                    },
-                                    {
-                                        width: 37,
-                                        name: "day",
-                                        regex: "^[0-9]$|^[0-9][0-9]$",
-                                        regexText: "0-99",
-                                        type: "string",
-                                        default: "0",
-                                        required: "true",
-                                        hidden: false
-                                    }
-                                ]
-                            },
-                            {
-                                type: "list",
-                                name: "sauvegarde",
-                                caption: "Backup frequency",
-                                tooltip: "See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> section backup frequency",
-                                values: {
-                                    daily: "Daily",
-                                    hourly: "Hourly"
-                                },
-                                hideLabel: false,
-                                hidden: false,
-                                editable: false,
-                                default: "daily",
-                                required: true
+                                "type": "displayfield",
+                                "cls": "warning",
+                                "height": 20,
+                                "hideLabel": true,
+                                "markup": "DB server requires to be automatically backed up into a file with another tool before installation."
                             }
                         ]
                     }
+                },
+                {
+                    "type": "compositefield",
+                    "name": "retention",
+                    "caption": "Retention period",
+                    "tooltip": "See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> section backup retention",
+                    "hideLabel": false,
+                    "items": [
+                        {
+                            "type": "displayfield",
+                            "height": 5,
+                            "hideLabel": true,
+                            "markup": "Years"
+                        },
+                        {
+                            "width": 37,
+                            "name": "year",
+                            "regex": "^[0-1]$",
+                            "regexText": "0-1",
+                            "type": "string",
+                            "default": "0",
+                            "required": true
+                        },
+                        {
+                            "type": "displayfield",
+                            "height": 5,
+                            "hideLabel": true,
+                            "markup": "Months"
+                        },
+                        {
+                            "width": 37,
+                            "name": "month",
+                            "regex": "^(1[0-2]|[0-9])$",
+                            "regexText": "0-12",
+                            "type": "string",
+                            "default": "0",
+                            "required": true
+                        },
+                        {
+                            "type": "displayfield",
+                            "height": 5,
+                            "hideLabel": true,
+                            "markup": "Days"
+                        },
+                        {
+                            "width": 37,
+                            "name": "day",
+                            "regex": "^[0-9]$|^[0-9][0-9]$",
+                            "regexText": "0-99",
+                            "type": "string",
+                            "default": "0",
+                            "required": true
+                        }
+                    ]
+                },
+                {
+                    "type": "list",
+                    "name": "sauvegarde",
+                    "caption": "Backup frequency",
+                    "tooltip": "See our FAQ <a target='_blank' href='https://faq.infomaniak.com/2420'>Add-on SwissBackup</a> section backup frequency",
+                    "values": {
+                        "daily": "Daily",
+                        "hourly": "Hourly"
+                    },
+                    "editable": false,
+                    "default": "daily",
+                    "required": true
                 }
             ]
         }
