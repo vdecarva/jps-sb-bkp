@@ -1,36 +1,23 @@
 import org.yaml.snakeyaml.Yaml;
 
-/*
- * restore_settings.js – formulaire pour la restauration SwissBackup.
- * Ce script est déclenché par le bouton “Restore” et affiche la liste des
- * sauvegardes disponibles sur les nœuds où l’add‑on est installé.  Le nom
- * de l’environnement est inclus dans la liste pour que l’utilisateur voie le scope.
- */
-
 var backupTemplate = "c3c375b4-83c6-434c-b8af-8ea6651e246d";
-
-// Récupérer tous les environnements
 var resp = jelastic.environment.control.GetEnvs(appid, session);
 if (resp.result != 0) return resp;
-
-// Structures pour stocker les nœuds et les backups
 var listBackups = {};
 var nodesHostname = {};
 var ids = [];
 
-// Parcourir les environnements et collecter les nœuds équipés de l’add‑on
+
 for (var i = 0, envInfo; envInfo = resp.infos[i]; i++) {
     if (envInfo.env.status == "1") {
         var envName = envInfo.env.envName;
         for (var j = 0, node; node = envInfo.nodes[j]; j++) {
             for (var m = 0, add; add = node.addons[m]; m++) {
                 if (add.appTemplateId == backupTemplate) {
-                    // Construire le nom du conteneur et l’identifiant comme dans settings.js
                     var admin = node.adminUrl.replace("https://", "").replace("http://", "");
                     admin = admin.replace(/\..*/, "").replace("docker", "node").replace("vds", "node");
                     var shortName = admin.substring(admin.indexOf('-') + 1);
                     var id = admin.substring(4, admin.indexOf('-'));
-                    // Préfixer par l’environnement pour l’affichage
                     var fullName = envName + " / " + shortName;
                     ids.push({ name: shortName, id: id, full: fullName });
                 }
@@ -39,13 +26,14 @@ for (var i = 0, envInfo; envInfo = resp.infos[i]; i++) {
     }
 }
 
-// Lire plan.json sur chaque nœud collecté et construire les listes de backups
+
 var params = {
     session: session,
     path: "/home/plan.json",
     nodeType: "",
     nodeGroup: ""
 };
+
 var latest = 0;
 ids.forEach(function (element) {
     var fileResp = jelastic.environment.file.Read(
@@ -74,7 +62,6 @@ ids.forEach(function (element) {
     }
 });
 
-// Retourner le formulaire de restauration
 return {
     result: 0,
     "settings": {
