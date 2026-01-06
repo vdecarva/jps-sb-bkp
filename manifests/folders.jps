@@ -1,6 +1,7 @@
 type: update
 name: Add-on backup
 baseUrl: https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/master/
+onBeforeInit: scripts/settings_backup.js
 
 globals:
 
