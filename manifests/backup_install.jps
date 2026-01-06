@@ -22,10 +22,10 @@ onInstall:
     - backup
 
 settings:
-  main:
+  swiss-backup-create:
      onBeforeInit: scripts/settings_backup.js
 
-  restoreForm:
+  swiss-backup-restore:
      onBeforeInit: scripts/settings_restore.js
 
 actions:
@@ -82,14 +82,14 @@ buttons:
   
   - action: configure
     caption: Configure schedule
-    settings: main
+    settings: swiss-backup-create
     submitButtonText: Configure backup routine 
     loadingText: Configuring backup routine...
 
   - action: restore
     caption: Restore a backup
     submitButtonText: Restore from a backup
-    settings: restoreForm
+    settings: swiss-backup-restore
     loadingText: Restoring from selected backup...
 
 success:
