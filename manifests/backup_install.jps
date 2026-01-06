@@ -105,16 +105,6 @@ buttons:
     submitButtonText: Remove backup routine 
     loadingText: Removing backup routine...
 
-  - action: fullBackup
-    caption: Schedule full backup
-    submitButtonText: Configure backup routine
-    confirmText: Are you sure?
-
-  - action: folderBackup
-    caption: Schedule folder backup
-    submitButtonText: Configure backup routine
-    confirmText: Are you sure?
-
   - action: restore
     caption: Restore a backup
     submitButtonText: Restore from a backup
