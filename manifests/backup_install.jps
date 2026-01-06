@@ -51,4 +51,22 @@ actions:
       month: "${settings.month}"
       day: "${settings.day}"
 
+  desinstall:
+    install:
+      jps: manifests/uninstall.jps
+    setGlobals:
+      SUCCESS: remove
+    settings:
+      node: "${targetNodes.nodeGroup}"
+
 user: root
+
+buttons:
+    action: desinstall
+    caption: Remove backup routine 
+    submitButtonText: Remove backup routine 
+    loadingText: Remove backup routine...
+    
+success:
+  text:  success/${globals.SUCCESS}.md
+  mail:  success/${globals.SUCCESS}.md
