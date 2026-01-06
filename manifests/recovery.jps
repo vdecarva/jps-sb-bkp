@@ -5,8 +5,6 @@ baseUrl: https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/master/
 globals:
 
   pass: ${fn.md5([user.uid])}
-
-onBeforeInit: scripts/settings_restore.js
       
 targetNodes:
 
