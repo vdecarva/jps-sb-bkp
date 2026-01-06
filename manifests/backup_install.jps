@@ -6,7 +6,7 @@ description:
   text:   
                         <br>You can easily choose a **backup** **frequency** for your containers and easily choose the **lifetime** of your backups.</br>
                         For your **restoration** select the backup of your choice and restore it **everywhere** in your environment.
-  short: Easily back up and restore your containers' filesystems in the container of your choice.
+  short: Easily back up and restore your container's filesystems in the container of your choice.
 logo: SwissBackup.svg
 onBeforeInit: scripts/settings_backup.js
 
@@ -63,9 +63,9 @@ user: root
 
 buttons:
     action: desinstall
-    caption: Remove backup routine 
+    caption: Remove schedule
     submitButtonText: Remove backup routine 
-    loadingText: Remove backup routine...
+    loadingText: Removing backup routine...
     
 success:
   text:  success/${globals.SUCCESS}.md
