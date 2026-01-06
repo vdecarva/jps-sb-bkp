@@ -112,13 +112,14 @@ buttons:
 
   - action: configure
     caption: Configure backup schedule
+    settings: scripts/settings_backup.js
     submitButtonText: Configure backup routine 
     loadingText: Configure backup routine...
 
   - action: restore
     caption: Restore a backup
     submitButtonText: Restore from a backup
-    settings: restoreForm
+    settings: scripts/settings_restore.js
     loadingText: Restoring from selected backup...
     successText: The backup have been successfully restored.
 
