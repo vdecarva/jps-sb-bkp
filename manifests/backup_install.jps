@@ -67,12 +67,12 @@ actions:
     setGlobals:
       SUCCESS: restore
     settings:
-      User: "${settings.User}"
-      key: "${settings.key}"
-      snapshot: "${settings.snapshot}"
-      destination: "${settings.destination}"
-      custom: "${settings.custom}"
-      node: "${settings.nodeGroup}"
+      User: "${settings.swiss-backup-restore.User}"
+      key: "${settings.swiss-backup-restore.key}"
+      snapshot: "${settings.swiss-backup-restore.snapshot}"
+      destination: "${settings.swiss-backup-restore.destination}"
+      custom: "${settings.swiss-backup-restore.custom}"
+      node: "${settings.swiss-backup-restore.nodeGroup}"
 
 user: root
 
