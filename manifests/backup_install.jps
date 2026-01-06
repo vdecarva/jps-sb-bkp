@@ -23,9 +23,34 @@ onInstall:
     - backup
 
 settings:
-  restore: 
+  main:
     fields: []
-    onBeforeInit: scripts/settings_restore.js
+
+  restoreForm:
+    fields:
+      - name: User
+        caption: Swiss Backup username
+        type: string
+        required: true
+        default: "SBI-"
+      - name: key
+        caption: Password
+        type: string
+        inputType: password
+        required: false
+      - name: snapshot
+        caption: Backup ID to restore
+        type: string
+        required: true
+      - name: destination
+        caption: Restore location
+        type: string
+        default: "/tmp/restore/"
+        required: true
+      - name: custom
+        caption: Restore to this username (optional)
+        type: string
+        required: false
 
 actions:
 
@@ -89,6 +114,7 @@ buttons:
   - action: restore
     caption: Restore a backup
     submitButtonText: Restore from a backup
+    settings: restoreForm
     loadingText: Restoring from selected backup...
     successText: The backup have been successfully restored.
 
