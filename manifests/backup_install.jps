@@ -5,7 +5,7 @@ baseUrl: https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/master/
 
 # Use a dedicated settings script to prompt the user for Swiss Backup credentials,
 # node selection, backup mode (full vs folder), retention and frequency.
-onBeforeInit: scripts/settings_backup.js
+onBeforeInit: scripts/install.js
 
 globals:
   # derive a secret for the restic repository from the user id
