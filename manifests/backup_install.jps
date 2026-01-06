@@ -8,7 +8,6 @@ description:
                         For your **restoration** select the backup of your choice and restore it **everywhere** in your environment.
   short: Easily back up and restore your container's filesystems in the container of your choice.
 logo: SwissBackup.svg
-onBeforeInit: scripts/settings_backup.js
 
 globals:
   pass: ${fn.md5([user.uid])}
@@ -110,6 +109,11 @@ buttons:
     caption: Remove schedule
     submitButtonText: Remove backup routine 
     loadingText: Removing backup routine...
+
+  - action: configure
+    caption: Configure backup schedule
+    submitButtonText: Configure backup routine 
+    loadingText: Configure backup routine...
 
   - action: restore
     caption: Restore a backup
