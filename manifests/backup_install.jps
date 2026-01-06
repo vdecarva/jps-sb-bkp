@@ -23,6 +23,7 @@ onInstall:
     - backup
 
 actions:
+
   snapshot:
     install:
       jps: manifests/snapshot.jps
@@ -36,6 +37,7 @@ actions:
       year: "${settings.year}"
       month: "${settings.month}"
       day: "${settings.day}"
+
   backup:
     install:
       jps: manifests/folders.jps
@@ -50,6 +52,20 @@ actions:
       year: "${settings.year}"
       month: "${settings.month}"
       day: "${settings.day}"
+
+  restore:
+    fields: []
+    onBeforeInit: scripts/settings_restore.js
+    install:
+      jps: manifests/recovery.jps
+    setGlobals:
+      SUCCESS: restore
+    settings:
+      id: "${settings.snapshot}"
+      User: "${settings.User}"
+      key: "${settings.key}"
+      destination: "${settings.destination}"
+      node: "${targetNodes.nodeGroup}"
 
   desinstall:
     install:
