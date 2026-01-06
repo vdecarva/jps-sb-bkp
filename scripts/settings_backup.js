@@ -2,7 +2,8 @@ import org.yaml.snakeyaml.Yaml;
 
 // Only list nodes in the current environment that have the backup add‑on installed.  This
 // script is invoked before scheduling a backup and does not handle restoration.
-var envName = '${env.envName}';
+var envs = api.env.control.GetEnvs();
+if (envs.result !== 0) return envs;
 var resp = jelastic.environment.control.GetEnvInfo(envName, session);
 if (resp.result != 0) return resp;
 
