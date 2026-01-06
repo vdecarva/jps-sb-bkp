@@ -23,9 +23,11 @@ onInstall:
 
 settings:
   swiss-backup-create:
+     fields: []
      onBeforeInit: scripts/settings_backup.js
 
   swiss-backup-restore:
+     fields: []
      onBeforeInit: scripts/settings_restore.js
 
 actions:
