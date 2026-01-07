@@ -70,7 +70,6 @@ actions:
 
 
   configure:
-    install:
       if ('${settings.choice}' == 'full'):
         - snapshot
       if ('${settings.choice}' == 'folder'):
