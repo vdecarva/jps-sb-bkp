@@ -22,7 +22,7 @@ settings:
 
   swiss-backup-restore:
      fields: []
-     onBeforeInit: scripts/pushfield_restore.js
+     onBeforeInit: scripts/pushfield_restore_snapshots.js
 
   swiss-backup-select-env:
     fields: []
