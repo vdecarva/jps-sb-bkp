@@ -1,6 +1,9 @@
 import org.yaml.snakeyaml.Yaml;
 
-var backupTemplate = "c26ac12d-32ab-497e-a05b-43d7d270aa3a"; // ton template addon
+var backupTemplates = {
+  "c3c375b4-83c6-434c-b8af-8ea6651e246d": true, // officiel
+  "c26ac12d-32ab-497e-a05b-43d7d270aa3a": true  // ton fork
+};
 
 function firstNonEmpty(arr) {
   for (var i = 0; i < arr.length; i++) {
@@ -10,136 +13,83 @@ function firstNonEmpty(arr) {
   return "";
 }
 
-// 1) essayer de choper l'env courant depuis le contexte UI
-var currentEnv = firstNonEmpty([
-  "${env.envName}",
-  "${env.shortdomain}",
-  "${envName}"
-]);
-
-jelastic.marketplace.console.WriteLog("DEBUG currentEnv=[" + currentEnv + "]");
-
-// 2) si on n'a pas l'env, fallback (ton ancien comportement)
-var envInfos = [];
-if (currentEnv) {
-  var one = jelastic.environment.control.GetEnvInfo(currentEnv, session);
-  if (one.result != 0) return one;
-  // normaliser au format envInfos[*] proche de GetEnvs()
-  envInfos = [{ env: one.env, nodes: one.nodes }];
-} else {
-  var all = jelastic.environment.control.GetEnvs(appid, session);
-  if (all.result != 0) return all;
-  envInfos = all.infos;
+function nodeHasBackupAddon(node) {
+  var addons = node.addons || [];
+  for (var i = 0; i < addons.length; i++) {
+    if (backupTemplates[addons[i].appTemplateId]) return true;
+  }
+  return false;
 }
 
-// 3) préparer structures restore (nodes->snapshots)
-var listBackups = {};     // "nodeCaption" => { snapshotId: caption }
-var nodesHostname = {};   // "nodeCaption" => "nodeCaption"
-var ids = [];
+var currentEnv = firstNonEmpty(["${env.envName}", "${env.shortdomain}", "${envName}"]);
+jelastic.marketplace.console.WriteLog("DEBUG currentEnv=[" + currentEnv + "]");
 
-for (var i = 0; i < envInfos.length; i++) {
-  var envInfo = envInfos[i];
-  if (!envInfo || !envInfo.env) continue;
+if (!currentEnv) return { result: 1, error: "Cannot detect current environment." };
 
-  // IMPORTANT: on veut l'env courant uniquement => si currentEnv set, on ne passe que celui-ci
-  var envName = envInfo.env.envName || envInfo.env.shortdomain || "";
-  if (currentEnv && envName !== currentEnv) continue;
+var info = api.env.control.GetEnvInfo(currentEnv, session);
+if (info.result != 0) return info;
 
-  // skip stopped
-  if (String(envInfo.env.status) !== "1") continue;
+jelastic.marketplace.console.WriteLog("DEBUG nodesCount=" + (info.nodes || []).length);
 
-  for (var j = 0; j < (envInfo.nodes || []).length; j++) {
-    var node = envInfo.nodes[j];
-    var addons = node.addons || [];
-    var hasAddon = false;
+var listBackups = {};
+var nodesHostname = {};
+var candidates = [];
 
-    for (var m = 0; m < addons.length; m++) {
-      if (addons[m].appTemplateId == backupTemplate) {
-        hasAddon = true;
-        break;
-      }
-    }
-    if (!hasAddon) continue;
+for (var i = 0; i < (info.nodes || []).length; i++) {
+  var node = info.nodes[i];
 
-    // adminUrl -> nodeName + id (comme ton script)
-    var admin = String(node.adminUrl || "").replace("https://", "").replace("http://", "");
-    admin = admin.replace(/\..*/, "").replace("docker", "node").replace("vds", "node");
+  jelastic.marketplace.console.WriteLog(
+    "DEBUG nodeGroup=" + node.nodeGroup +
+    " nodeid=" + node.id +
+    " addons=" + (node.addons ? node.addons.length : 0)
+  );
 
-    var shortName = admin.substring(admin.indexOf("-") + 1);
-    var id = admin.substring(4, admin.indexOf("-"));
+  if (!nodeHasBackupAddon(node)) continue;
 
-    // caption lisible : env / nodeGroup (ou shortname)
-    var nodeCaption = envName + " / " + (node.nodeGroup || shortName);
+  jelastic.marketplace.console.WriteLog("DEBUG addon matched on nodeid=" + node.id + " group=" + node.nodeGroup);
 
-    ids.push({ name: shortName, id: id, caption: nodeCaption });
-  }
+  // node.name pour FileService.Read = envName (dans Jelastic), nodeid = node.id
+  // tu peux aussi utiliser node.envName, mais ici on reste simple :
+  candidates.push({
+    env: currentEnv,
+    nodeid: node.id,
+    label: currentEnv + " / " + node.nodeGroup
+  });
 }
 
 var params = { session: session, path: "/home/plan.json", nodeType: "", nodeGroup: "" };
 
-ids.forEach(function (element) {
-  var fileResp = jelastic.environment.file.Read(
-    element.name,
-    params.session,
-    params.path,
-    params.nodeType,
-    params.nodeGroup,
-    element.id
-  );
+candidates.forEach(function (c) {
+  var r = api.env.file.Read(c.env, params.session, params.path, params.nodeType, params.nodeGroup, c.nodeid);
+  jelastic.marketplace.console.WriteLog("DEBUG Read plan.json env=" + c.env + " nodeid=" + c.nodeid + " result=" + r.result);
 
-  if (fileResp.result != 0) return;
+  if (r.result != 0) return;
 
-  var plan = toNative(new Yaml().load(fileResp.body));
+  var plan = toNative(new Yaml().load(r.body));
   if (!plan || !plan.backup_plan) return;
 
   plan.backup_plan.forEach(function (bk) {
-    if (!listBackups[element.caption]) listBackups[element.caption] = {};
+    if (!listBackups[c.label]) listBackups[c.label] = {};
     var display = bk.date.replace("T", " ") + " " + bk.path + " " + bk.size;
-    listBackups[element.caption][bk.id] = display;
-    nodesHostname[element.caption] = element.caption;
+    listBackups[c.label][bk.id] = display;
+    nodesHostname[c.label] = c.label;
   });
 });
 
-// 4) push fields (comme ton restore qui marche)
+// DEBUG final
+jelastic.marketplace.console.WriteLog("DEBUG nodesHostname keys=" + Object.keys(nodesHostname).length);
+
+// Push fields (tu gardes les tiens)
 settings.fields.push(
-  { type: "compositefield", hideLabel: true, pack: "center", name: "header_auth",
-    items: [{ type: "displayfield", cls: "x-item-disabled", value: "Swissbackup authentication" }] },
-
-  { name: "User", caption: "Swiss Backup username", type: "string", required: true, default: "SBI-" },
-  { name: "key", caption: "Password", type: "string", required: false, inputType: "password" },
-
-  { caption: "__________________________________________________________________________________", cls: "x-item-disabled",
-    type: "displayfield", name: "sep1", hidden: false },
-
-  { type: "compositefield", hideLabel: true, pack: "center", name: "header_restore",
-    items: [{ type: "displayfield", cls: "x-item-disabled", value: "Select the backup you want to restore" }] },
-
-  { caption: "Display backups for", type: "list", name: "nodes",
-    values: nodesHostname, required: true, columns: 2 },
-
-  { caption: "Select backup", type: "list", name: "snapshot",
-    dependsOn: { nodes: listBackups }, tooltip: "UTC time", required: true },
-
-  { caption: "__________________________________________________________________________________", cls: "x-item-disabled",
-    type: "displayfield", name: "sep2", hidden: false },
-
-  { type: "compositefield", hideLabel: true, pack: "center", name: "header_cfg",
-    items: [{ type: "displayfield", cls: "x-item-disabled", value: "Restore configuration" }] },
-
-  { type: "radio-fieldset", name: "permissions", required: true, default: "classic",
-    values: { classic: "Keep original files permissions", permissions: "Change files ownership" },
-    showIf: {
-      classic: [
-        { name: "destination", caption: "Restore location", type: "string", placeholder: "/tmp/restore/", required: true },
-        { type: "displayfield", cls: "warning", hideLabel: true, height: 20, markup: "Existing files will be overwritten" }
-      ],
-      permissions: [
-        { name: "custom", caption: "Restore to this username", type: "string", placeholder: "example: nginx", required: true },
-        { name: "destination", caption: "Restore location", type: "string", placeholder: "/tmp/restore/", required: true },
-        { type: "displayfield", cls: "warning", hideLabel: true, height: 20, markup: "Existing files will be overwritten" }
-      ]
-    }
-  }
+  { type:"compositefield", hideLabel:true, pack:"center", name:"header_auth",
+    items:[{ type:"displayfield", cls:"x-item-disabled", value:"Swissbackup authentication" }] },
+  { name:"User", caption:"Swiss Backup username", type:"string", required:true, default:"SBI-" },
+  { name:"key", caption:"Password", type:"string", required:false, inputType:"password" },
+  { caption:"__________________________________________________________________________________", cls:"x-item-disabled", type:"displayfield", name:"sep1", hidden:false },
+  { type:"compositefield", hideLabel:true, pack:"center", name:"header_restore",
+    items:[{ type:"displayfield", cls:"x-item-disabled", value:"Select the backup you want to restore" }] },
+  { caption:"Display backups for", type:"list", name:"nodes", values:nodesHostname, required:true, columns:2 },
+  { caption:"Select backup", type:"list", name:"snapshot", dependsOn:{ nodes:listBackups }, tooltip:"UTC time", required:true }
 );
 
 return settings;
