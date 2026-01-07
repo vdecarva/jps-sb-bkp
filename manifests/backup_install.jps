@@ -76,12 +76,28 @@ actions:
       custom: "${settings.custom}"
       node: "${settings.nodes}"
 
+  user-restauration:
+    install:
+      jps: manifest/user-recovery.jps
+    setGlobals:
+      SUCCESS: success
+    settings:
+      id: "${settings.snapshot}"
+      User: "${settings.User}"
+      key: "${settings.key}"
+      destination: "${settings.destination}"
+      node: "${targetNodes.nodeGroup}"
+      custom: "${settings.custom}"
 
   configure:
       if ('${settings.choice}' == 'full'):
         - snapshot
       if ('${settings.choice}' == 'folder'):
         - backup
+      if ('${settings.mode}' == 'restauration' && '${settings.permissions}' == 'classic'):
+        - restauration
+      if ('${settings.mode}' == 'restauration' && '${settings.permissions}' == 'permissions'):
+        - user-restauration
 
 user: root
 
