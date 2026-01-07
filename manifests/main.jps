@@ -20,35 +20,32 @@ settings:
     fields: []
     onBeforeInit: scripts/pushfield_create.js
 
-  # Form 1 (select env + auth)
   swiss-backup-select-env:
     fields: []
     onBeforeInit: scripts/pushfield_select_env.js
 
-  # Form 2 (snapshots for selected env)
   swiss-backup-restore:
     fields: []
     onBeforeInit: scripts/pushfield_restore_snapshots.js
 
 actions:
 
-  # Step 1: user picks env
+  restore_flow:
+    - restore_env
+    - restore_select_env
+    - restore
+
   restore_env:
     caption: Restore
     settings: swiss-backup-select-env
     submitButtonText: Next
     loadingText: Loading environments...
-    onAfterSubmit:
-      - restore_select_env
 
-  # Step 2: show snapshots (filtered by envName from step 1)
   restore_select_env:
     caption: Restore
     settings: swiss-backup-restore
     submitButtonText: Restore from a backup
     loadingText: Loading backups...
-    onAfterSubmit:
-      - restore
 
   snapshot:
     install:
@@ -113,7 +110,7 @@ buttons:
     submitButtonText: Configure backup routine
     loadingText: Configuring backup routine...
 
-  - action: restore_env
+  - action: restore_flow
     caption: Restore a backup
     submitButtonText: Restore
     settings: swiss-backup-select-env
