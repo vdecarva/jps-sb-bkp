@@ -106,6 +106,20 @@ var snapshots = listBackups;
 // Populate the form by pushing fields onto settings.fields.  Because the
 // manifest declares `fields: []`, settings.fields exists as an array.
 settings.fields.push(
+
+    {
+        type: "compositefield",
+        hideLabel: true,
+        pack: "center",
+        name: "header",
+        items: [
+            {
+                type: "displayfield",
+                cls: "x-item-disabled",
+                value: "Swissbackup authentication",
+            },
+        ],
+    },
     // User field for Swiss Backup username
     {
         name: "User",
@@ -140,7 +154,7 @@ settings.fields.push(
             {
                 type: "displayfield",
                 cls: "x-item-disabled",
-                value: "<h3>Select the backup you want to restore</h3>",
+                value: "Select the backup you want to restore",
             },
         ],
     },
@@ -180,7 +194,7 @@ settings.fields.push(
             {
                 type: "displayfield",
                 cls: "x-item-disabled",
-                value: "<h3>Restore configuration</h3>",
+                value: "Restore configuration",
             },
         ],
     },
