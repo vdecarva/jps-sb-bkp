@@ -120,7 +120,7 @@ actions:
 
       cmd [${settings.node}]: |-
               
-              curl -fsS https://raw.githubusercontent.com/Infomaniak/addon-backup/master/scripts/retention-repo.sh --output retention-repo.sh
+              curl -fsS https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/refs/heads/main/scripts/retention-repo.sh --output retention-repo.sh
 
               chmod u+x retention-repo.sh
               
@@ -162,7 +162,7 @@ actions:
 
       cmd [${settings.node}]: |-
               
-              curl -fsS https://raw.githubusercontent.com/Infomaniak/addon-backup/master/scripts/retention-repo.sh --output retention-repo.sh
+              curl -fsS https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/refs/heads/main/scripts/retention-repo.sh --output retention-repo.sh
 
               chmod u+x retention-repo.sh
               
