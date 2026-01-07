@@ -73,25 +73,33 @@ for i in ${FOLDERS_TO_BACKUP}"" ; do
 
 done
 
-function loopOverArray(){
-         restic snapshots --json | jq -r '.?' | jq -c '.[]'| while read i; do
-           id=$(echo "$i" | jq -r '.| .short_id')
-                test=$(restic --no-lock stats $id | awk '{b=$3$4; print b}' |tail -1|sed 's/%$//g')
-                   size=$(echo $test)
-              ctime=$(echo "$i" | jq -r '.| .time' | cut -f1 -d".")
-                  paths=$(echo "$i" | jq -r '. | .paths | join(",")')
-            hostname=$(echo $i | jq -r '.| .hostname')
+loopOverArray() {
+  HOST_FILTER="${HOST_FILTER:-$(hostname -s)}"
 
-       printf "{\"id\":%-s, \"date\":%-s, \"size\":%-s, \"path\":%-s, \"name\":%-s}," \"$id\" \"$ctime\" \"$size\" \"$paths\" \"$hostname\"
+  restic snapshots --json \
+  | jq -c --arg h "$HOST_FILTER" '.[] | select(.hostname == $h)' \
+  | while read -r i; do
+      id="$(jq -r '.short_id' <<<"$i")"
+      ctime="$(jq -r '.time | split(".")[0]' <<<"$i")"
+      paths="$(jq -r '.paths | join(",")' <<<"$i")"
+      hostname="$(jq -r '.hostname' <<<"$i")"
 
-               done
-              }
-             function parse(){
-                  local res=$(loopOverArray)
-                  res_clean=$(echo "[$res]" | sed 's/\(.*\),/\1 /')
-                  now=`date +%s`
-                  myplan="{\"last_update\": \"$now\", \"backup_plan\":$res_clean}"
-                  touch /home/plan.json
-                  echo $myplan > /home/plan.json
-                  }
-         parse
+      test="$(restic --no-lock stats "$id" | awk 'END{gsub(/%/,"",$3); print $3$4}')"
+      size="$test"
+
+      jq -nc \
+        --arg id "$id" \
+        --arg date "$ctime" \
+        --arg size "$size" \
+        --arg path "$paths" \
+        --arg name "$hostname" \
+        '{id:$id, date:$date, size:$size, path:$path, name:$name}'
+    done
+}
+
+parse() {
+  now="$(date +%s)"
+  loopOverArray | jq -s --arg now "$now" '{last_update:$now, backup_plan:.}' > /home/plan.json
+}
+
+parse
