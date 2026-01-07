@@ -17,7 +17,6 @@ targetNodes:
 
 settings:
   swiss-backup-create:
-     fields: []
      onBeforeInit: scripts/settings_backup.js
 
   swiss-backup-restore:
