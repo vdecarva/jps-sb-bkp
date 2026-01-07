@@ -1,6 +1,6 @@
 import org.yaml.snakeyaml.Yaml;
 
-var backupTemplate = "c3c375b4-83c6-434c-b8af-8ea6651e246d";
+var backupTemplate = "986c9b27-70cb-465a-ad1a-6f0bb3f449e5";
 var resp = jelastic.environment.control.GetEnvs(appid, session);
 if (resp.result != 0) return resp;
 var listBackups = {};
