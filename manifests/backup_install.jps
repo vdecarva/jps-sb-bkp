@@ -74,7 +74,7 @@ actions:
       snapshot: "${settings.snapshot}"
       destination: "${settings.destination}"
       custom: "${settings.custom}"
-      node: "${settings.nodes}"
+      node: "${targetNodes.nodeGroup}"
 
   user-restauration:
     install:
