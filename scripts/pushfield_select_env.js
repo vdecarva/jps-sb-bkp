@@ -1,7 +1,9 @@
 import org.yaml.snakeyaml.Yaml;
 
-var backupTemplates = "c26ac12d-32ab-497e-a05b-43d7d270aa3a";
-
+var backupTemplates = {
+  "c26ac12d-32ab-497e-a05b-43d7d270aa3a": true, // ton addon
+  "c3c375b4-83c6-434c-b8af-8ea6651e246d": true  // addon Infomaniak (tu l’as sur sqldb/nosqldb chez toi)
+};
 function firstNonEmpty(arr) {
   for (var i = 0; i < arr.length; i++) {
     var s = String(arr[i] || "").trim();
