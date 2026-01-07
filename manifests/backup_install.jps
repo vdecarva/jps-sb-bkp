@@ -104,7 +104,7 @@ buttons:
   - action: restore_env
     caption: Restore a backup
     submitButtonText: Restore from a backup
-    settings: swiss-backup-restore-env
+    settings: swiss-backup-select-env
     loadingText: Restoring from selected backup...
 
 
