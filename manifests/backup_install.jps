@@ -24,9 +24,9 @@ settings:
      fields: []
      onBeforeInit: scripts/pushfield_restore.js
 
-  swiss-backup-restore-env:
+  swiss-backup-select-env:
     fields: []
-    onBeforeInit: scripts/pushfield_restore_env.js
+    onBeforeInit: scripts/pushfield_select_env.js
 
 actions:
 
@@ -36,7 +36,7 @@ actions:
     submitButtonText: Next
     loadingText: Loading environments...
     onAfterSubmit:
-      - restore_select_env
+      - restore
 
   snapshot:
     install:
@@ -101,11 +101,12 @@ buttons:
     submitButtonText: Configure backup routine 
     loadingText: Configuring backup routine...
 
-  - action: restore
+  - action: restore_env
     caption: Restore a backup
     submitButtonText: Restore from a backup
-    settings: swiss-backup-restore
+    settings: swiss-backup-restore-env
     loadingText: Restoring from selected backup...
+
 
 success:
   text:  success/${globals.SUCCESS}.md
