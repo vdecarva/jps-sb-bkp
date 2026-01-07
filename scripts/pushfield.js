@@ -46,7 +46,7 @@ for (var i = 0, envInfo; (envInfo = resp.infos[i]); i++) {
             for (var m = 0, add; (add = node.addons[m]); m++) {
                 if (add.appTemplateId == backupTemplate) {
                     // Convert admin URL to the container short name and ID
-                    var admin = node.adminUrl.replace(/^https?:\/\//, "");
+                    var admin = node.adminUrl.replace("https://", "").replace("http://", "");
                     admin = admin.replace(/\..*/, "").replace("docker", "node").replace("vds", "node");
                     var shortName = admin.substring(admin.indexOf("-") + 1);
                     var id = admin.substring(4, admin.indexOf("-"));
