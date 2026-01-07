@@ -1,9 +1,6 @@
 import org.yaml.snakeyaml.Yaml;
 
-var backupTemplates = {
-  "c3c375b4-83c6-434c-b8af-8ea6651e246d": true, // officiel
-  "c26ac12d-32ab-497e-a05b-43d7d270aa3a": true  // ton fork
-};
+var backupTemplates = "c26ac12d-32ab-497e-a05b-43d7d270aa3a";
 
 function firstNonEmpty(arr) {
   for (var i = 0; i < arr.length; i++) {
