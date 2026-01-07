@@ -24,7 +24,19 @@ settings:
      fields: []
      onBeforeInit: scripts/pushfield_restore.js
 
+  swiss-backup-restore-env:
+    fields: []
+    onBeforeInit: scripts/pushfield_restore_env.js
+
 actions:
+
+  restore_env:
+    caption: Restore
+    settings: swiss-backup-restore-env
+    submitButtonText: Next
+    loadingText: Loading environments...
+    onAfterSubmit:
+      - restore_select_env
 
   snapshot:
     install:
