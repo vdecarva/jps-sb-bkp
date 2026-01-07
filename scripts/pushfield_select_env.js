@@ -1,23 +1,11 @@
 import org.yaml.snakeyaml.Yaml;
 
-var backupTemplates = {
-  "c26ac12d-32ab-497e-a05b-43d7d270aa3a": true, // ton addon
-  "c3c375b4-83c6-434c-b8af-8ea6651e246d": true  // addon Infomaniak (tu l’as sur sqldb/nosqldb chez toi)
-};
 function firstNonEmpty(arr) {
   for (var i = 0; i < arr.length; i++) {
     var s = String(arr[i] || "").trim();
     if (s && s !== "null" && s !== "undefined" && s.indexOf("${") !== 0) return s;
   }
   return "";
-}
-
-function nodeHasBackupAddon(node) {
-  var addons = node.addons || [];
-  for (var i = 0; i < addons.length; i++) {
-    if (backupTemplates[addons[i].appTemplateId]) return true;
-  }
-  return false;
 }
 
 var currentEnv = firstNonEmpty(["${env.envName}", "${env.shortdomain}", "${envName}"]);
@@ -30,55 +18,47 @@ if (info.result != 0) return info;
 
 jelastic.marketplace.console.WriteLog("DEBUG nodesCount=" + (info.nodes || []).length);
 
-var listBackups = {};
-var nodesHostname = {};
-var candidates = [];
-
-for (var i = 0; i < (info.nodes || []).length; i++) {
-  var node = info.nodes[i];
-
-  jelastic.marketplace.console.WriteLog(
-    "DEBUG nodeGroup=" + node.nodeGroup +
-    " nodeid=" + node.id +
-    " addons=" + (node.addons ? node.addons.length : 0)
-  );
-
-  if (!nodeHasBackupAddon(node)) continue;
-
-  jelastic.marketplace.console.WriteLog("DEBUG addon matched on nodeid=" + node.id + " group=" + node.nodeGroup);
-
-  // node.name pour FileService.Read = envName (dans Jelastic), nodeid = node.id
-  // tu peux aussi utiliser node.envName, mais ici on reste simple :
-  candidates.push({
-    env: currentEnv,
-    nodeid: node.id,
-    label: currentEnv + " / " + node.nodeGroup
-  });
-}
+var listBackups = {};     // "env / nodeGroup" => { backupId: display }
+var nodesHostname = {};   // "env / nodeGroup" => "env / nodeGroup"
 
 var params = { session: session, path: "/home/plan.json", nodeType: "", nodeGroup: "" };
 
-candidates.forEach(function (c) {
-  var r = api.env.file.Read(c.env, params.session, params.path, params.nodeType, params.nodeGroup, c.nodeid);
-  jelastic.marketplace.console.WriteLog("DEBUG Read plan.json env=" + c.env + " nodeid=" + c.nodeid + " result=" + r.result);
+for (var i = 0; i < (info.nodes || []).length; i++) {
+  var node = info.nodes[i];
+  var label = currentEnv + " / " + node.nodeGroup;
 
-  if (r.result != 0) return;
+  jelastic.marketplace.console.WriteLog(
+    "DEBUG tryRead plan.json nodeGroup=" + node.nodeGroup + " nodeid=" + node.id
+  );
 
-  var plan = toNative(new Yaml().load(r.body));
-  if (!plan || !plan.backup_plan) return;
+  // IMPORTANT: FileService.Read attend envName + nodeid
+  var r = api.env.file.Read(currentEnv, params.session, params.path, params.nodeType, params.nodeGroup, node.id);
+  jelastic.marketplace.console.WriteLog("DEBUG Read result=" + r.result + " for " + label);
 
-  plan.backup_plan.forEach(function (bk) {
-    if (!listBackups[c.label]) listBackups[c.label] = {};
-    var display = bk.date.replace("T", " ") + " " + bk.path + " " + bk.size;
-    listBackups[c.label][bk.id] = display;
-    nodesHostname[c.label] = c.label;
-  });
-});
+  if (r.result != 0) continue; // pas de plan.json sur ce node
 
-// DEBUG final
+  var plan;
+  try {
+    plan = toNative(new Yaml().load(r.body));
+  } catch (e) {
+    jelastic.marketplace.console.WriteLog("DEBUG YAML parse failed for " + label + " err=" + e);
+    continue;
+  }
+
+  if (!plan || !plan.backup_plan || !plan.backup_plan.length) continue;
+
+  nodesHostname[label] = label;
+  if (!listBackups[label]) listBackups[label] = {};
+
+  for (var j = 0; j < plan.backup_plan.length; j++) {
+    var bk = plan.backup_plan[j];
+    var display = String(bk.date || "").replace("T", " ") + " " + (bk.path || "") + " " + (bk.size || "");
+    listBackups[label][bk.id] = display;
+  }
+}
+
 jelastic.marketplace.console.WriteLog("DEBUG nodesHostname keys=" + Object.keys(nodesHostname).length);
 
-// Push fields (tu gardes les tiens)
 settings.fields.push(
   { type:"compositefield", hideLabel:true, pack:"center", name:"header_auth",
     items:[{ type:"displayfield", cls:"x-item-disabled", value:"Swissbackup authentication" }] },
