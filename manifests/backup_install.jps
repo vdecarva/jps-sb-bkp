@@ -17,7 +17,8 @@ targetNodes:
 
 settings:
   swiss-backup-create:
-     onBeforeInit: scripts/settings_backup.js
+     fields: []
+     onBeforeInit: scripts/pushfield_create.js
 
   swiss-backup-restore:
      fields: []
