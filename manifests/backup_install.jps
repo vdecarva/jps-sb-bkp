@@ -26,9 +26,9 @@ settings:
 
 actions:
 
-  select_env:
+  restore_env:
     caption: Restore
-    settings: swiss-backup-select-env
+    settings: swiss-backup-restore
     submitButtonText: Next
     loadingText: Loading environments...
     onAfterSubmit:
@@ -97,10 +97,10 @@ buttons:
     submitButtonText: Configure backup routine 
     loadingText: Configuring backup routine...
 
-  - action: select_env
+  - action: restore_env
     caption: Restore a backup
     submitButtonText: Restore from a backup
-    settings: swiss-backup-select-env
+    settings: swiss-backup-restore
     loadingText: Restoring from selected backup...
 
 
