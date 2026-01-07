@@ -89,6 +89,14 @@ actions:
       node: "${targetNodes.nodeGroup}"
       custom: "${settings.custom}"
 
+  desinstall:
+    install:
+      jps: manifest/uninstall.jps
+    setGlobals:
+      SUCCESS: remove
+    settings:
+      node: "${targetNodes.nodeGroup}"
+
   configure:
       if ('${settings.choice}' == 'full'):
         - snapshot
