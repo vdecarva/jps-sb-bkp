@@ -84,7 +84,7 @@ actions:
 
       cmd [${settings.node}]: |-
       
-              curl -fsSL https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/refs/heads/main/scripts/retention-repo.sh --output retention-all.sh
+              curl -fsSL https://raw.githubusercontent.com/vdecarva/jps-sb-bkp/refs/heads/main/scripts/retention-all.sh --output retention-all.sh
 
               chmod u+x retention-all.sh
               
