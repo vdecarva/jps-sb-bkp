@@ -31,7 +31,14 @@ actions:
     settings: swiss-backup-restore
     submitButtonText: Next
     loadingText: Loading environments...
-    - restore
+    settings:
+      User: "${settings.User}"
+      key: "${settings.key}"
+      snapshot: "${settings.snapshot}"
+      destination: "${settings.destination}"
+      custom: "${settings.custom}"
+      node: "${targetNodes.nodeGroup}"
+    action: restore
 
   snapshot:
     install:
