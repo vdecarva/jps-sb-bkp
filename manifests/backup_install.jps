@@ -31,8 +31,7 @@ actions:
     settings: swiss-backup-restore
     submitButtonText: Next
     loadingText: Loading environments...
-    onInstall:
-      - restore
+    - restore
 
   snapshot:
     install:
