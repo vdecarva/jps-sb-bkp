@@ -68,7 +68,8 @@ settings.fields.push(
   { type:"compositefield", hideLabel:true, pack:"center", name:"header_restore",
     items:[{ type:"displayfield", cls:"x-item-disabled", value:"Select the backup you want to restore" }] },
   { caption:"Display backups for", type:"list", name:"nodes", values:nodesHostname, required:true, columns:2 },
-  { caption:"Select backup", type:"list", name:"snapshot", dependsOn:{ nodes:listBackups }, tooltip:"UTC time", required:true }
+  { caption:"Select backup", type:"list", name:"snapshot", dependsOn:{ nodes:listBackups }, tooltip:"UTC time", required:true },
+  { caption: "Restore destination (absolute path)", name: "destination", type: "string", required: true, default: "/home/restored" },
 );
 
 return settings;
