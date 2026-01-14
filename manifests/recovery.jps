@@ -68,7 +68,7 @@ onInstall:
 
             chmod +x recovery.sh
 
-            ./recovery.sh -i "${settings.id}" -d ${settings.destination}
+            ./recovery.sh -i "${settings.snapshot}" -d ${settings.destination}
             
     user: root
 
